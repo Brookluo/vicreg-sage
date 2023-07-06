@@ -5,7 +5,7 @@ from typing import Tuple
 
 class SageTransform(object):
     def __init__(self):
-        self.rgb_transform = transforms.Compose(
+        self.rgb_transform = lambda rh, rw: transforms.Compose(
             [
                 transforms.ToTensor(),
                 # these parameters are from augmentation in vicreg
@@ -14,7 +14,8 @@ class SageTransform(object):
                 # crop the image to match the size of thermal image\
                 # keep the same aspect ratio 4/3
                 # TODO try to train the NN with different ratio
-                transforms.CenterCrop((1800, 2400)),
+                transforms.CenterCrop((rh, rw)),
+                # transforms.CenterCrop((1800, 2400)),
                 transforms.Resize((600, 800))
             ]
         )
@@ -27,7 +28,10 @@ class SageTransform(object):
         )
 
     def __call__(self, image_pair: Tuple[np.ndarray, np.ndarray, str]):
-        rgb_out = self.rgb_transform(image_pair[0])
+        ratio = 4 / 3
+        rh = int(image_pair[0].shape[0] / 1.1)
+        rw = int(rh * ratio)
+        rgb_out = self.rgb_transform(rh, rw)(image_pair[0])
         thermal_out = self.thermal_transform(image_pair[1])
         return rgb_out, thermal_out, image_pair[2]
 
