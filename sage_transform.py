@@ -1,10 +1,13 @@
 import torchvision.transforms as transforms
 import numpy as np
 from typing import Tuple
+import random
+import torch
 
 
 class SageTransform(object):
-    def __init__(self):
+    def __init__(self, aug=False):
+        self.aug = aug
         self.rgb_transform = lambda rh, rw: transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -33,6 +36,19 @@ class SageTransform(object):
         rw = int(rh * ratio)
         rgb_out = self.rgb_transform(rh, rw)(image_pair[0])
         thermal_out = self.thermal_transform(image_pair[1])
+        if self.aug:
+            rgb_size = np.array([600, 800])
+            ir_size = np.array([252, 336])
+            ratio = [rgb_size[i] / ir_size[i] for i in range(2)]
+            new_ir_dim = np.array(transforms.RandomCrop(200).get_params(thermal_out, (200, 200)))
+            new_rgb_dim = (np.array(new_ir_dim) * ratio[0]).astype(int)
+            rgb_out = transforms.functional.crop(rgb_out, *new_rgb_dim)
+            thermal_out = transforms.functional.crop(thermal_out, *new_ir_dim)
+            rand_t = RandomChoice([
+                            transforms.RandomHorizontalFlip(p=0.5),
+                            transforms.RandomVerticalFlip(p=0.5),
+                        ])
+            rgb_out, thermal_out = rand_t([rgb_out, thermal_out])
         return rgb_out, thermal_out, image_pair[2]
 
 
@@ -68,3 +84,13 @@ class SageRGBTransform(object):
         rgb_out = self.rgb_orig_transform(image_pair[0])
         rgb_aug_out = self.rgb_aug_transform(image_pair[0])
         return rgb_out, rgb_aug_out, image_pair[1]
+    
+    
+class RandomChoice(torch.nn.Module):
+    def __init__(self, transforms):
+        super().__init__()
+        self.transforms = transforms
+
+    def __call__(self, imgs):
+        t = random.choice(self.transforms)
+        return [t(img) for img in imgs]
