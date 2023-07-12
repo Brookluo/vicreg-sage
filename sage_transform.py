@@ -6,14 +6,18 @@ import torch
 
 
 class SageTransform(object):
-    def __init__(self, aug=False):
+    def __init__(self, aug=False, rgb_to_greyscale=False):
         self.aug = aug
+        if rgb_to_greyscale:
+            fun_rgb_trans = transforms.Grayscale(num_output_channels=1)
+        else:
+            # these parameters are from augmentation in vicreg
+            fun_rgb_trans = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                 std=[0.229, 0.224, 0.225])
         self.rgb_transform = lambda rh, rw: transforms.Compose(
             [
                 transforms.ToTensor(),
-                # these parameters are from augmentation in vicreg
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
+                fun_rgb_trans,
                 # crop the image to match the size of thermal image\
                 # keep the same aspect ratio 4/3
                 # TODO try to train the NN with different ratio
