@@ -77,9 +77,10 @@ def sage_rgbloader(path: "str") -> Tuple[np.ndarray, np.ndarray, str]:
 
     Returns
     -------
-    tuple[np.ndarray, str]
+    tuple[np.ndarray, np.ndarray, str]
         If the input `path` is a txt file, then return a tuple of 
-        ndarray of the rgb and the path to the (pair) file loaded.
+        ndarray of the rgb and its duplicate and the path to the (pair) file loaded.
+        The duplicate of rgb array is to comply with the unified input.
 
     Raises
     ------
@@ -99,7 +100,7 @@ def sage_rgbloader(path: "str") -> Tuple[np.ndarray, np.ndarray, str]:
     rgb_path = Path(file_path.parent.parent.parent, "rgb", lines[0].strip())
     rgb_img = Image.open(rgb_path)
     arr_rgb = np.array(rgb_img.convert("RGB"))
-    return (arr_rgb, str(file_path))
+    return (arr_rgb, arr_rgb, str(file_path))
 
 
 class SageFolder(DatasetFolder):

@@ -13,23 +13,24 @@ class SageTransform(object):
         self.rgb_outsize = (600, 800)
         self.ir_outsize = (252, 336)
         # assign functional
-        self.left_transform = rgb_transform
+        self.left_transform = self.rgb_transform
         if compare_rgb_gs:
-            self.right_transform = rgb_transform
+            self.right_transform = self.rgb_transform
         else:
-            self.right_transform = thermal_transform
+            self.right_transform = self.thermal_transform
         
         
     def __call__(self, image_pair: Tuple[np.ndarray, np.ndarray, str]):
         ratio = 4 / 3
         rh = int(image_pair[0].shape[0] / 1.1)
         rw = int(rh * ratio)
-        left_trans_func = self.left_transform(rh, rw, self.rgb_outsize,
+        left_trans_func = self.left_transform(rh, rw,
+                                              *self.rgb_outsize,
                                               self.rgb_to_greyscale)
         rgb_out = left_trans_func(image_pair[0])
         if self.compare_rgb_gs:
-            right_trans_func = self.right_transform(rh*0.8, rw*0.8,
-                                                    self.ir_outsize,
+            right_trans_func = self.right_transform(int(rh*0.8), int(rw*0.8),
+                                                    *self.ir_outsize,
                                                     to_grayscale=True)
         else:
             right_trans_func = self.right_transform()
@@ -53,7 +54,7 @@ class SageTransform(object):
         return rgb_out, thermal_out, image_pair[2]
     
     
-    def rgb_transform(rh, rw, out_size: Tuple, to_grayscale):
+    def rgb_transform(self, crop_h, crop_w, out_h, out_w, to_grayscale):
         if to_grayscale:
             fun_rgb_trans = transforms.Grayscale(num_output_channels=1)
         else:
@@ -67,15 +68,15 @@ class SageTransform(object):
                 # crop the image to match the size of thermal image\
                 # keep the same aspect ratio 4/3
                 # TODO try to train the NN with different ratio
-                transforms.CenterCrop((rh, rw)),
+                transforms.CenterCrop((crop_h, crop_w)),
                 # transforms.CenterCrop((1800, 2400)),
-                transforms.Resize(out_size)
+                transforms.Resize((out_h, out_w))
             ]
         )
         return trans_func
 
     
-    def thermal_transform():
+    def thermal_transform(self):
         trans_func = transforms.Compose(
             [
                 transforms.ToTensor(),
