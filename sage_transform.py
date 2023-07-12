@@ -46,8 +46,10 @@ class SageTransform(object):
             thermal_out = transforms.functional.crop(thermal_out, *new_ir_dim)
             rand_t = RandomChoice(
                 [
-                    transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.RandomVerticalFlip(p=0.5),
+                    transforms.RandomHorizontalFlip(p=1),
+                    transforms.RandomVerticalFlip(p=1),
+                    transforms.RandomHorizontalFlip(p=0), # do nothing
+                    transforms.RandomVerticalFlip(p=0), # do nothing
                 ]
             )
             rgb_out, thermal_out = rand_t([rgb_out, thermal_out])
