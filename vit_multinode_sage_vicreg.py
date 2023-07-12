@@ -105,6 +105,14 @@ def get_arguments():
     parser.add_argument('--local_rank', default=-1, type=int)
     parser.add_argument('--dist-url', default='env://',
                         help='url used to set up distributed training')
+    
+    # custom options
+    parser.add_argument("--augment", "-aug", default=False, action="store_true",
+                        help="whether adding augmentation to input images")
+    parser.add_argument("--grayscale", "-gs", default=False, action="store_true",
+                        help="whether use greyscale rather than full RGB 3-ch images")
+    parser.add_argument("--compare_rgb_gs", "-comp", default=False, action="store_true",
+                        help="whether compare rgb with grayscale image. This can only be true if grayscale is False. (You don't want to compare grayscale with grayscale)")
 
     return parser
 
@@ -124,7 +132,11 @@ def main(args):
     # transforms = aug.TrainTransform()
     # dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
     # note tha the data_dir should contain the rgb and thermal directories
-    transform = SageTransform()
+    if args.compare_rgb_gs:
+        assert args.grayscale == False, "You don't want to compare grayscale with grayscale"
+    transform = SageTransform(aug=args.augment,
+                              rgb_to_greyscale=args.grayscale,
+                              compare_rgb_gs=args.compare_rgb_gs)
     dataset = SageFolder(args.data_dir / "train/pairs", transform=transform)
 
     # sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True)
