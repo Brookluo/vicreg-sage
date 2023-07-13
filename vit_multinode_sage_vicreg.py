@@ -12,6 +12,7 @@ import math
 import os
 import sys
 import time
+import signal
 
 try:
     os.environ['CUDA_VISIBLE_DEVICES']=os.environ['OMPI_COMM_WORLD_LOCAL_RANK']
@@ -109,10 +110,10 @@ def get_arguments():
     # custom options
     parser.add_argument("--augment", "-aug", default=False, action="store_true",
                         help="whether adding augmentation to input images")
-    parser.add_argument("--grayscale", "-gs", default=False, action="store_true",
+    parser.add_argument("--greyscale", "-gs", default=False, action="store_true",
                         help="whether use greyscale rather than full RGB 3-ch images")
     parser.add_argument("--compare_rgb_gs", "-comp", default=False, action="store_true",
-                        help="whether compare rgb with grayscale image. This can only be true if grayscale is False. (You don't want to compare grayscale with grayscale)")
+                        help="whether compare rgb with greyscale image. This can only be true if greyscale is False. (You don't want to compare greyscale with greyscale)")
 
     return parser
 
@@ -133,9 +134,9 @@ def main(args):
     # dataset = datasets.ImageFolder(args.data_dir / "train", transforms)
     # note tha the data_dir should contain the rgb and thermal directories
     if args.compare_rgb_gs:
-        assert args.grayscale == False, "You don't want to compare grayscale with grayscale"
+        assert args.greyscale == False, "You don't want to compare greyscale with greyscale"
     transform = SageTransform(aug=args.augment,
-                              rgb_to_greyscale=args.grayscale,
+                              rgb_to_greyscale=args.greyscale,
                               compare_rgb_gs=args.compare_rgb_gs)
     dataset = SageFolder(args.data_dir / "train/pairs", transform=transform)
 
@@ -460,10 +461,12 @@ def handle_sigusr1(signum, frame):
 
 
 def handle_sigterm(signum, frame):
-    pass
-
+    print("Caught SIGTERM, exiting with status 0...")
+    sys.exit(0)
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('VICReg training script', parents=[get_arguments()])
     args = parser.parse_args()
+    signal.signal(signal.SIGTERM, handle_sigterm)
     main(args)

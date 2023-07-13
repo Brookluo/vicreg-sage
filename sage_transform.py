@@ -41,6 +41,7 @@ class SageTransform(object):
             ratio = [rgb_size[i] / ir_size[i] for i in range(2)]
             new_ir_dim = np.array(transforms.RandomCrop(200).get_params(thermal_out,
                                                                         (200, 200)))
+            # this equals (476, 476)
             new_rgb_dim = (np.array(new_ir_dim) * ratio[0]).astype(int)
             rgb_out = transforms.functional.crop(rgb_out, *new_rgb_dim)
             thermal_out = transforms.functional.crop(thermal_out, *new_ir_dim)
